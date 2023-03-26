@@ -162,8 +162,5 @@ module.exports = (function() {
             enable = true;
             if(success_cb) { success_cb(); }
         },
-        discoverUnpaired : function(success_cb, fail_cb) {
-            alert("bluetoothSerial.discoverUnpaired is not implemented");
-        },
     }
 })();

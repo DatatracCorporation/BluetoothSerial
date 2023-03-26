@@ -1,3 +1,13 @@
+= 0.5.0 =
+
+Document the removal of iOS support from unnumbered version in fork.
+Upgrade to Android 12 (API 31) permission model. BLUETOOTH_CONNECT only.
+Remove support for managing discovery.
+
+= unnumbered =
+
+Disable iOS to avoid requiring BT declarations in iOS app that does not use BT.
+
 = 0.x.x =
 Add hc02 Bluetooth BLE support #359
 

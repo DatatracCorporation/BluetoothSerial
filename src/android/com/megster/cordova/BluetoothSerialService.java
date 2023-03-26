@@ -162,13 +162,6 @@ public class BluetoothSerialService {
         mConnectedThread = new ConnectedThread(socket, socketType);
         mConnectedThread.start();
 
-        // Send the name of the connected device back to the UI Activity
-        Message msg = mHandler.obtainMessage(BluetoothSerial.MESSAGE_DEVICE_NAME);
-        Bundle bundle = new Bundle();
-        bundle.putString(BluetoothSerial.DEVICE_NAME, device.getName());
-        msg.setData(bundle);
-        mHandler.sendMessage(msg);
-
         setState(STATE_CONNECTED);
     }
 
@@ -362,9 +355,6 @@ public class BluetoothSerialService {
         public void run() {
             Log.i(TAG, "BEGIN mConnectThread SocketType:" + mSocketType);
             setName("ConnectThread" + mSocketType);
-
-            // Always cancel discovery because it will slow down a connection
-            mAdapter.cancelDiscovery();
 
             // Make a connection to the BluetoothSocket
             try {

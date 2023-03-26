@@ -7,26 +7,24 @@
     "id": "cordova-plugin-bluetooth-serial",
     "platforms": [
       "android",
-      "ios",
       "wp8"
     ]
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/don/BluetoothSerial.git"
+    "url": "git+https://github.com/DatatracCorporation/BluetoothSerial.git"
   },
   "keywords": [
     "cordova",
     "bluetooth",
     "serial",
     "ble",
-    "arduino",
     "ecosystem:cordova"
   ],
-  "author": "Don Coleman <don.coleman@gmail.com>",
+  "author": "Jim Patterson <jpatterson@datatrac.com>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/don/BluetoothSerial/issues"
+    "url": "https://github.com/DatatracCorporation/BluetoothSerial/issues"
   },
-  "homepage": "https://github.com/don/BluetoothSerial#readme"
+  "homepage": "https://github.com/DatatracCorporation/BluetoothSerial#readme"
 }

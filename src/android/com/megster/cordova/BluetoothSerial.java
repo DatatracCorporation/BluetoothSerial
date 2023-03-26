@@ -10,6 +10,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.Settings;
@@ -48,9 +49,6 @@ public class BluetoothSerial extends CordovaPlugin {
     private static final String CLEAR = "clear";
     private static final String SETTINGS = "showBluetoothSettings";
     private static final String ENABLE = "enable";
-    private static final String DISCOVER_UNPAIRED = "discoverUnpaired";
-    private static final String SET_DEVICE_DISCOVERED_LISTENER = "setDeviceDiscoveredListener";
-    private static final String CLEAR_DEVICE_DISCOVERED_LISTENER = "clearDeviceDiscoveredListener";
     private static final String SET_NAME = "setName";
     private static final String SET_DISCOVERABLE = "setDiscoverable";
 
@@ -59,7 +57,7 @@ public class BluetoothSerial extends CordovaPlugin {
     private CallbackContext dataAvailableCallback;
     private CallbackContext rawDataAvailableCallback;
     private CallbackContext enableBluetoothCallback;
-    private CallbackContext deviceDiscoveredCallback;
+    private CallbackContext permsCallback;
 
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothSerialService bluetoothSerialService;
@@ -72,22 +70,19 @@ public class BluetoothSerial extends CordovaPlugin {
     public static final int MESSAGE_STATE_CHANGE = 1;
     public static final int MESSAGE_READ = 2;
     public static final int MESSAGE_WRITE = 3;
-    public static final int MESSAGE_DEVICE_NAME = 4;
     public static final int MESSAGE_TOAST = 5;
     public static final int MESSAGE_READ_RAW = 6;
 
     // Key names received from the BluetoothChatService Handler
-    public static final String DEVICE_NAME = "device_name";
     public static final String TOAST = "toast";
 
     StringBuffer buffer = new StringBuffer();
     private String delimiter;
+
     private static final int REQUEST_ENABLE_BLUETOOTH = 1;
 
-    // Android 23 requires user to explicitly grant permission for location to discover unpaired
-    private static final String ACCESS_COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
-    private static final int CHECK_PERMISSIONS_REQ_CODE = 2;
-    private CallbackContext permissionCallback;
+    private static final String BT_CONNECT = Manifest.permission.BLUETOOTH_CONNECT;
+    private static final int LIST_REQ_CODE = 2;
 
     @Override
     public boolean execute(String action, CordovaArgs args, CallbackContext callbackContext) throws JSONException {
@@ -106,7 +101,15 @@ public class BluetoothSerial extends CordovaPlugin {
 
         if (action.equals(LIST)) {
 
-            listBondedDevices(callbackContext);
+            final boolean androidS =
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
+
+            if (!androidS || cordova.hasPermission(BT_CONNECT)) {
+                listBondedDevices(callbackContext);
+            } else if (androidS) {
+                permsCallback = callbackContext;
+                cordova.requestPermission(this, LIST_REQ_CODE, BT_CONNECT);
+            }
 
         } else if (action.equals(CONNECT)) {
 
@@ -211,23 +214,6 @@ public class BluetoothSerial extends CordovaPlugin {
             Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             cordova.startActivityForResult(this, intent, REQUEST_ENABLE_BLUETOOTH);
 
-        } else if (action.equals(DISCOVER_UNPAIRED)) {
-
-            if (cordova.hasPermission(ACCESS_COARSE_LOCATION)) {
-                discoverUnpairedDevices(callbackContext);
-            } else {
-                permissionCallback = callbackContext;
-                cordova.requestPermission(this, CHECK_PERMISSIONS_REQ_CODE, ACCESS_COARSE_LOCATION);
-            }
-
-        } else if (action.equals(SET_DEVICE_DISCOVERED_LISTENER)) {
-
-            this.deviceDiscoveredCallback = callbackContext;
-
-        } else if (action.equals(CLEAR_DEVICE_DISCOVERED_LISTENER)) {
-
-            this.deviceDiscoveredCallback = null;
-
         } else if (action.equals(SET_NAME)) {
 
             String newName = args.getString(0);
@@ -286,43 +272,6 @@ public class BluetoothSerial extends CordovaPlugin {
             deviceList.put(deviceToJSON(device));
         }
         callbackContext.success(deviceList);
-    }
-
-    private void discoverUnpairedDevices(final CallbackContext callbackContext) throws JSONException {
-
-        final CallbackContext ddc = deviceDiscoveredCallback;
-
-        final BroadcastReceiver discoverReceiver = new BroadcastReceiver() {
-
-            private JSONArray unpairedDevices = new JSONArray();
-
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    try {
-                    	JSONObject o = deviceToJSON(device);
-                        unpairedDevices.put(o);
-                        if (ddc != null) {
-                            PluginResult res = new PluginResult(PluginResult.Status.OK, o);
-                            res.setKeepCallback(true);
-                            ddc.sendPluginResult(res);
-                        }
-                    } catch (JSONException e) {
-                        // This shouldn't happen, log and ignore
-                        Log.e(TAG, "Problem converting device to JSON", e);
-                    }
-                } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-                    callbackContext.success(unpairedDevices);
-                    cordova.getActivity().unregisterReceiver(this);
-                }
-            }
-        };
-
-        Activity activity = cordova.getActivity();
-        activity.registerReceiver(discoverReceiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
-        activity.registerReceiver(discoverReceiver, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
-        bluetoothAdapter.startDiscovery();
     }
 
     private JSONObject deviceToJSON(BluetoothDevice device) throws JSONException {
@@ -399,9 +348,6 @@ public class BluetoothSerial extends CordovaPlugin {
                     //  String writeMessage = new String(writeBuf);
                     //  Log.i(TAG, "Wrote: " + writeMessage);
                     break;
-                case MESSAGE_DEVICE_NAME:
-                    Log.i(TAG, msg.getData().getString(DEVICE_NAME));
-                    break;
                 case MESSAGE_TOAST:
                     String message = msg.getData().getString(TOAST);
                     notifyConnectionLost(message);
@@ -471,19 +417,19 @@ public class BluetoothSerial extends CordovaPlugin {
 
         for(int result:grantResults) {
             if(result == PackageManager.PERMISSION_DENIED) {
-                LOG.d(TAG, "User *rejected* location permission");
-                this.permissionCallback.sendPluginResult(new PluginResult(
+                LOG.d(TAG, "User *rejected* BT connect permission");
+                this.permsCallback.sendPluginResult(new PluginResult(
                         PluginResult.Status.ERROR,
-                        "Location permission is required to discover unpaired devices.")
+                        "Bluetooth connect permission is required to connect to devices.")
                     );
                 return;
             }
         }
 
         switch(requestCode) {
-            case CHECK_PERMISSIONS_REQ_CODE:
-                LOG.d(TAG, "User granted location permission");
-                discoverUnpairedDevices(permissionCallback);
+            case LIST_REQ_CODE:
+                LOG.d(TAG, "User granted BT connect permission");
+                listBondedDevices(permsCallback);
                 break;
         }
     }

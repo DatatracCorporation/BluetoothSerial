@@ -1,13 +1,22 @@
-# Bluetooth Serial Plugin for PhoneGap
+# Bluetooth Serial Plugin for Cordova
 
-This plugin enables serial communication over Bluetooth. It was written for communicating between Android or iOS and an Arduino.
+This plugin enables serial communication over Bluetooth. It was
+originally written for communicating between Android or iOS and an
+Arduino.
 
-Android and Windows Phone use Classic Bluetooth.  iOS uses Bluetooth Low Energy.
+It can be used to communicate with Bluetooth barcode scanners in SPP
+mode.
+
+Android and Windows Phone use Classic Bluetooth.  iOS support has been
+disabled at this point.
+
+Under Android 12 (API 31), Android support targets the lowest permission
+profiles, so only the BLUETOOTH_CONNECT permission is used, meaning that
+this plugin no longer manages discoverability.
 
 ## Supported Platforms
 
 * Android
-* iOS with [RedBearLab](http://redbearlab.com) BLE hardware, [Adafruit Bluefruit LE](http://www.adafruit.com/products/1697), [Laird BL600](http://www.lairdtech.com/Products/Embedded-Wireless-Solutions/Bluetooth-Radio-Modules/BL600-Series/#.VBI7AS5dUzI), [BlueGiga](https://bluegiga.zendesk.com/entries/29185293--BGScript-spp-over-ble-AT-command-SPP-implementation-for-BLE), or [HC-02](http://www.hc01.com/productdetail?productid=20180314021)
 * Windows Phone 8
 * Browser (Testing only. See [comments](https://github.com/don/BluetoothSerial/blob/master/src/browser/bluetoothSerial.js).)
 
@@ -16,9 +25,7 @@ Android and Windows Phone use Classic Bluetooth.  iOS uses Bluetooth Low Energy.
 ## Limitations
 
  * The phone must initiate the Bluetooth connection
- * iOS Bluetooth Low Energy requires iPhone 4S, iPhone5, iPod 5, or iPad3+
  * Will *not* connect Android to Android[*](https://github.com/don/BluetoothSerial/issues/50#issuecomment-66405396)
- * Will *not* connect iOS to iOS[*](https://github.com/don/BluetoothSerial/issues/75#issuecomment-52591397)
 
 # Installing
 
@@ -54,9 +61,6 @@ There are some [sample projects](https://github.com/don/BluetoothSerial/tree/mas
 - [bluetoothSerial.readRSSI](#readrssi)
 - [bluetoothSerial.showBluetoothSettings](#showbluetoothsettings)
 - [bluetoothSerial.enable](#enable)
-- [bluetoothSerial.discoverUnpaired](#discoverunpaired)
-- [bluetoothSerial.setDeviceDiscoveredListener](#setdevicediscoveredlistener)
-- [bluetoothSerial.clearDeviceDiscoveredListener](#cleardevicediscoveredlistener)
 - [bluetoothSerial.setName](#setname)
 - [bluetoothSerial.setDiscoverable](#setdiscoverable)
 
@@ -72,9 +76,6 @@ Function `connect` connects to a Bluetooth device.  The callback is long running
 
 #### Android
 For Android, `connect` takes a MAC address of the remote device.
-
-#### iOS
-For iOS, `connect` takes the UUID of the remote device.  Optionally, you can pass an **empty string** and the plugin will connect to the first BLE peripheral.
 
 #### Windows Phone
 For Windows Phone, `connect` takes a MAC address of the remote device. The MAC address can optionally surrounded with parenthesis. e.g. `(AA:BB:CC:DD:EE:FF)`
@@ -98,9 +99,6 @@ Function `connectInsecure` works like [connect](#connect), but creates an insecu
 
 #### Android
 For Android, `connectInsecure` takes a macAddress of the remote device.
-
-#### iOS
-`connectInsecure` is **not supported** on iOS.
 
 #### Windows Phone
 `connectInsecure` is **not supported** on Windows Phone.
@@ -353,21 +351,6 @@ Example list passed to success callback.  See [BluetoothDevice](http://developer
         "name": "RN42"
     }]
 
-#### iOS
-
-Function `list` lists the discovered Bluetooth Low Energy peripheral.  The success callback is called with a list of objects.
-
-Example list passed to success callback for iOS.
-
-    [{
-        "id": "CC410A23-2865-F03E-FC6A-4C17E858E11E",
-        "uuid": "CC410A23-2865-F03E-FC6A-4C17E858E11E",
-        "name": "Biscuit",
-        "rssi": -68
-    }]
-
-The advertised RSSI **may** be included if available.
-
 #### Windows Phone
 
 Function `list` lists the paired Bluetooth devices.  The success callback is called with a list of objects.
@@ -486,10 +469,6 @@ Show the Bluetooth settings on the device.
 
 Function `showBluetoothSettings` opens the Bluetooth settings on the operating systems.
 
-#### iOS
-
-`showBluetoothSettings` is not supported on iOS.
-
 ### Parameters
 
 - __success__: Success callback function [optional]
@@ -511,7 +490,7 @@ Function `enable` prompts the user to enable Bluetooth.
 
 #### Android
 
-`enable` is only supported on Android and does not work on iOS or Windows Phone.
+`enable` is only supported on Android and does not work on Windows Phone.
 
 If `enable` is called when Bluetooth is already enabled, the user will not prompted and the success callback will be invoked.
 
@@ -531,95 +510,6 @@ If `enable` is called when Bluetooth is already enabled, the user will not promp
         }
     );
 
-## discoverUnpaired
-
-Discover unpaired devices
-
-    bluetoothSerial.discoverUnpaired(success, failure);
-
-### Description
-
-#### Android
-
-Function `discoverUnpaired` discovers unpaired Bluetooth devices. The success callback is called with a list of objects similar to `list`, or an empty list if no unpaired devices are found.
-
-Example list passed to success callback.
-
-    [{
-        "class": 276,
-        "id": "10:BF:48:CB:00:00",
-        "address": "10:BF:48:CB:00:00",
-        "name": "Nexus 7"
-    }, {
-        "class": 7936,
-        "id": "00:06:66:4D:00:00",
-        "address": "00:06:66:4D:00:00",
-        "name": "RN42"
-    }]
-
-The discovery process takes a while to happen. You can register notify callback with [setDeviceDiscoveredListener](#setdevicediscoveredlistener).
-You may also want to show a progress indicator while waiting for the discover proces to finish, and the sucess callback to be invoked.
-
-Calling `connect` on an unpaired Bluetooth device should begin the Android pairing process.
-
-#### iOS
-
-`discoverUnpaired` is not supported on iOS. iOS uses Bluetooth Low Energy and `list` discovers devices without pairing.
-
-#### Windows Phone
-
-`discoverUnpaired` is not supported on Windows Phone.
-
-### Parameters
-
-- __success__: Success callback function that is invoked with a list of unpaired devices.
-- __failure__: Error callback function, invoked when error occurs. [optional]
-
-### Quick Example
-
-    bluetoothSerial.discoverUnpaired(function(devices) {
-        devices.forEach(function(device) {
-            console.log(device.id);
-        })
-    }, failure);
-
-## setDeviceDiscoveredListener
-
-Register a notify callback function to be called during bluetooth device discovery. For callback to work, discovery process must
-be started with [discoverUnpaired](#discoverunpaired).
-There can be only one registered callback.
-
-Example object passed to notify callback.
-
-    {
-        "class": 276,
-        "id": "10:BF:48:CB:00:00",
-        "address": "10:BF:48:CB:00:00",
-        "name": "Nexus 7"
-    }
-
-#### iOS & Windows Phone
-
-See [discoverUnpaired](#discoverunpaired).
-
-### Parameters
-
-- __notify__: Notify callback function that is invoked when device is discovered during discovery process.
-
-### Quick Example
-
-    bluetoothSerial.setDeviceDiscoveredListener(function(device) {
-		console.log('Found: '+device.id);
-    });
-
-## clearDeviceDiscoveredListener
-
-Clears notify callback function registered with [setDeviceDiscoveredListener](#setdevicediscoveredlistener).
-
-### Quick Example
-
-    bluetoothSerial.clearDeviceDiscoveredListener();
-
 ## setName
 
 Sets the human readable device name that is broadcasted to other devices.
@@ -628,9 +518,6 @@ Sets the human readable device name that is broadcasted to other devices.
 
 #### Android
 For Android, `setName` takes a String for the new name.
-
-#### iOS
-Not currently implemented.
 
 #### Windows Phone
 Not currently implemented.
@@ -651,9 +538,6 @@ Makes the device discoverable by other devices.
 
 #### Android
 For Android, `setDiscoverable` takes an int for the number of seconds device should be discoverable. A time of 0 will make it permanently discoverable.
-
-#### iOS
-Not currently implemented.
 
 #### Windows Phone
 Not currently implemented.
@@ -685,14 +569,6 @@ On the Arduino side I test with [Sparkfun Mate Silver](https://www.sparkfun.com/
 
 I highly recommend [Adafruit's Bluefruit EZ-Link](http://www.adafruit.com/products/1588).
 
-### iOS
-
-**NOTE: Currently iOS only works with RedBear Labs Hardware, Adafruit Bluefruit LE, Laird BL600, and BlueGiga UART services**
-
-This plugin was originally developed with Cordova 3.4 using iOS 7.x on an iPhone 5s connecting to a [RedBearLab BLEMini](http://redbearlab.com/blemini). Ensure that you have update the BLE Mini firmware to at least [Biscuit-UART_20130313.bin](https://github.com/RedBearLab/Biscuit/tree/master/release).
-
-Most development is now done with iOS 8 with Cordova 4.2 using [RedBear Lab BLE Shield](http://redbearlab.com/bleshield/) or [Adafruit Bluefruit LE Friend](https://www.adafruit.com/product/2267).
-
 ### Supporting other BLE hardware
 
 For Bluetooth Low Energy, this plugin supports some hardware running known UART-like services, but can support any Bluetooth Low Energy hardware with a "serial like" service. This means a transmit characteristic that is writable and a receive characteristic that supports notification.
@@ -706,10 +582,6 @@ See [Issue 141](https://github.com/don/BluetoothSerial/issues/141#issuecomment-1
 ### Android
 
 Most of the Bluetooth implementation was borrowed from the Bluetooth Chat example in the Android SDK.
-
-### iOS
-
-The iOS code uses RedBearLab's [BLE_Framework](https://github.com/RedBearLab/iOS/tree/master/BLEFramework/BLE).
 
 ### API
 
