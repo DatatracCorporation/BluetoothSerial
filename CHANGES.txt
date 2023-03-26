@@ -1,3 +1,7 @@
+= 0.5.1 =
+
+Remove listen mode, non-raw read, and setDiscoverable.
+
 = 0.5.0 =
 
 Document the removal of iOS support from unnumbered version in fork.

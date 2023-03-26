@@ -46,22 +46,13 @@ There are some [sample projects](https://github.com/don/BluetoothSerial/tree/mas
 - [bluetoothSerial.connectInsecure](#connectInsecure)
 - [bluetoothSerial.disconnect](#disconnect)
 - [bluetoothSerial.write](#write)
-- [bluetoothSerial.available](#available)
-- [bluetoothSerial.read](#read)
-- [bluetoothSerial.readUntil](#readuntil)
-- [bluetoothSerial.subscribe](#subscribe)
-- [bluetoothSerial.unsubscribe](#unsubscribe)
 - [bluetoothSerial.subscribeRawData](#subscriberawdata)
 - [bluetoothSerial.unsubscribeRawData](#unsubscriberawdata)
-- [bluetoothSerial.clear](#clear)
 - [bluetoothSerial.list](#list)
 - [bluetoothSerial.isEnabled](#isenabled)
 - [bluetoothSerial.isConnected](#isconnected)
-- [bluetoothSerial.readRSSI](#readrssi)
 - [bluetoothSerial.showBluetoothSettings](#showbluetoothsettings)
 - [bluetoothSerial.enable](#enable)
-- [bluetoothSerial.setName](#setname)
-- [bluetoothSerial.setDiscoverable](#setdiscoverable)
 
 ## connect
 
@@ -154,112 +145,6 @@ Internally string, integer array, and Uint8Array are converted to an ArrayBuffer
     // Array Buffer
     bluetoothSerial.write(data.buffer, success, failure);
 
-## available
-
-Gets the number of bytes of data available.
-
-    bluetoothSerial.available(success, failure);
-
-### Description
-
-Function `available` gets the number of bytes of data available.  The bytes are passed as a parameter to the success callback.
-
-### Parameters
-
-- __success__: Success callback function that is invoked when the connection is successful. [optional]
-- __failure__: Error callback function, invoked when error occurs. [optional]
-
-### Quick Example
-
-    bluetoothSerial.available(function (numBytes) {
-        console.log("There are " + numBytes + " available to read.");
-    }, failure);
-
-## read
-
-Reads data from the buffer.
-
-    bluetoothSerial.read(success, failure);
-
-### Description
-
-Function `read` reads the data from the buffer. The data is passed to the success callback as a String.  Calling `read` when no data is available will pass an empty String to the callback.
-
-### Parameters
-
-- __success__: Success callback function that is invoked with the number of bytes available to be read.
-- __failure__: Error callback function, invoked when error occurs. [optional]
-
-### Quick Example
-
-    bluetoothSerial.read(function (data) {
-        console.log(data);
-    }, failure);
-
-## readUntil
-
-Reads data from the buffer until it reaches a delimiter.
-
-    bluetoothSerial.readUntil('\n', success, failure);
-
-### Description
-
-Function `readUntil` reads the data from the buffer until it reaches a delimiter.  The data is passed to the success callback as a String.  If the buffer does not contain the delimiter, an empty String is passed to the callback. Calling `read` when no data is available will pass an empty String to the callback.
-
-### Parameters
-
-- __delimiter__: delimiter
-- __success__: Success callback function that is invoked with the data.
-- __failure__: Error callback function, invoked when error occurs. [optional]
-
-### Quick Example
-
-    bluetoothSerial.readUntil('\n', function (data) {
-        console.log(data);
-    }, failure);
-
-## subscribe
-
-Subscribe to be notified when data is received.
-
-    bluetoothSerial.subscribe('\n', success, failure);
-
-### Description
-
-Function `subscribe` registers a callback that is called when data is received.  A delimiter must be specified.  The callback is called with the data as soon as the delimiter string is read.  The callback is a long running callback and will exist until `unsubscribe` is called.
-
-### Parameters
-
-- __delimiter__: delimiter
-- __success__: Success callback function that is invoked with the data.
-- __failure__: Error callback function, invoked when error occurs. [optional]
-
-### Quick Example
-
-    // the success callback is called whenever data is received
-    bluetoothSerial.subscribe('\n', function (data) {
-        console.log(data);
-    }, failure);
-
-## unsubscribe
-
-Unsubscribe from a subscription.
-
-    bluetoothSerial.unsubscribe(success, failure);
-
-### Description
-
-Function `unsubscribe` removes any notification added by `subscribe` and kills the callback.
-
-### Parameters
-
-- __success__: Success callback function that is invoked when the connection is successful. [optional]
-- __failure__: Error callback function, invoked when error occurs. [optional]
-
-### Quick Example
-
-    bluetoothSerial.unsubscribe();
-
 ## subscribeRawData
 
 Subscribe to be notified when data is received.
@@ -301,21 +186,6 @@ Function `unsubscribeRawData` removes any notification added by `subscribeRawDat
 ### Quick Example
 
     bluetoothSerial.unsubscribeRawData();
-
-## clear
-
-Clears data in the buffer.
-
-    bluetoothSerial.clear(success, failure);
-
-### Description
-
-Function `clear` removes any data from the receive buffer.
-
-### Parameters
-
-- __success__: Success callback function that is invoked when the connection is successful. [optional]
-- __failure__: Error callback function, invoked when error occurs. [optional]
 
 ## list
 
@@ -408,31 +278,6 @@ Function `isEnabled` calls the success callback when bluetooth is enabled and th
         }
     );
 
-## readRSSI
-
-Reads the RSSI from the connected peripheral.
-
-    bluetoothSerial.readRSSI(success, failure);
-
-### Description
-
-Function `readRSSI` calls the success callback with the rssi.
-
-**BLE only** *This function is experimental and the API may change*
-
-### Parameters
-
-- __success__: Success callback function that is invoked with the rssi value.
-- __failure__: Error callback function, invoked when error occurs. [optional]
-
-### Quick Example
-
-    bluetoothSerial.readRSSI(
-        function(rssi) {
-            console.log(rssi);
-        }
-    );
-
 ## showBluetoothSettings
 
 Show the Bluetooth settings on the device.
@@ -484,40 +329,6 @@ If `enable` is called when Bluetooth is already enabled, the user will not promp
         }
     );
 
-## setName
-
-Sets the human readable device name that is broadcasted to other devices.
-
-    bluetoothSerial.setName(newName);
-
-#### Android
-For Android, `setName` takes a String for the new name.
-
-### Parameters
-
-- __newName__: Desired name of device.
-
-### Quick Example
-
-    bluetoothSerial.setName("Really cool name");
-
-## setDiscoverable
-
-Makes the device discoverable by other devices.
-
-    bluetoothSerial.setDiscoverable(discoverableDuration);
-
-#### Android
-For Android, `setDiscoverable` takes an int for the number of seconds device should be discoverable. A time of 0 will make it permanently discoverable.
-
-### Parameters
-
-- __discoverableDuration__: Desired number of seconds device should be discoverable for.
-
-### Quick Example
-
-    bluetoothSerial.setDiscoverable(0);
-
 # Misc
 
 ## Where does this work?
@@ -550,10 +361,6 @@ See [Issue 141](https://github.com/don/BluetoothSerial/issues/141#issuecomment-1
 ### Android
 
 Most of the Bluetooth implementation was borrowed from the Bluetooth Chat example in the Android SDK.
-
-### API
-
-The API for available, read, readUntil was influenced by the [BtSerial Library for Processing for Arduino](https://github.com/arduino/BtSerial)
 
 ## Wrong Bluetooth Plugin?
 

@@ -37,24 +37,15 @@ public class BluetoothSerial extends CordovaPlugin {
     private static final String CONNECT_INSECURE = "connectInsecure";
     private static final String DISCONNECT = "disconnect";
     private static final String WRITE = "write";
-    private static final String AVAILABLE = "available";
-    private static final String READ = "read";
-    private static final String READ_UNTIL = "readUntil";
-    private static final String SUBSCRIBE = "subscribe";
-    private static final String UNSUBSCRIBE = "unsubscribe";
     private static final String SUBSCRIBE_RAW = "subscribeRaw";
     private static final String UNSUBSCRIBE_RAW = "unsubscribeRaw";
     private static final String IS_ENABLED = "isEnabled";
     private static final String IS_CONNECTED = "isConnected";
-    private static final String CLEAR = "clear";
     private static final String SETTINGS = "showBluetoothSettings";
     private static final String ENABLE = "enable";
-    private static final String SET_NAME = "setName";
-    private static final String SET_DISCOVERABLE = "setDiscoverable";
 
     // callbacks
     private CallbackContext connectCallback;
-    private CallbackContext dataAvailableCallback;
     private CallbackContext rawDataAvailableCallback;
     private CallbackContext enableBluetoothCallback;
     private CallbackContext permsCallback;
@@ -75,9 +66,6 @@ public class BluetoothSerial extends CordovaPlugin {
 
     // Key names received from the BluetoothChatService Handler
     public static final String TOAST = "toast";
-
-    StringBuffer buffer = new StringBuffer();
-    private String delimiter;
 
     private static final int REQUEST_ENABLE_BLUETOOTH = 1;
 
@@ -134,39 +122,6 @@ public class BluetoothSerial extends CordovaPlugin {
             bluetoothSerialService.write(data);
             callbackContext.success();
 
-        } else if (action.equals(AVAILABLE)) {
-
-            callbackContext.success(available());
-
-        } else if (action.equals(READ)) {
-
-            callbackContext.success(read());
-
-        } else if (action.equals(READ_UNTIL)) {
-
-            String interesting = args.getString(0);
-            callbackContext.success(readUntil(interesting));
-
-        } else if (action.equals(SUBSCRIBE)) {
-
-            delimiter = args.getString(0);
-            dataAvailableCallback = callbackContext;
-
-            PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
-            result.setKeepCallback(true);
-            callbackContext.sendPluginResult(result);
-
-        } else if (action.equals(UNSUBSCRIBE)) {
-
-            delimiter = null;
-
-            // send no result, so Cordova won't hold onto the data available callback anymore
-            PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
-            dataAvailableCallback.sendPluginResult(result);
-            dataAvailableCallback = null;
-
-            callbackContext.success();
-
         } else if (action.equals(SUBSCRIBE_RAW)) {
 
             rawDataAvailableCallback = callbackContext;
@@ -183,6 +138,7 @@ public class BluetoothSerial extends CordovaPlugin {
 
         } else if (action.equals(IS_ENABLED)) {
 
+            // TODO: This will fail starting with API 33.
             if (bluetoothAdapter.isEnabled()) {
                 callbackContext.success();
             } else {
@@ -197,11 +153,6 @@ public class BluetoothSerial extends CordovaPlugin {
                 callbackContext.error("Not connected.");
             }
 
-        } else if (action.equals(CLEAR)) {
-
-            buffer.setLength(0);
-            callbackContext.success();
-
         } else if (action.equals(SETTINGS)) {
 
             Intent intent = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
@@ -210,22 +161,10 @@ public class BluetoothSerial extends CordovaPlugin {
 
         } else if (action.equals(ENABLE)) {
 
+            // TODO: This will fail starting with API 33.
             enableBluetoothCallback = callbackContext;
             Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             cordova.startActivityForResult(this, intent, REQUEST_ENABLE_BLUETOOTH);
-
-        } else if (action.equals(SET_NAME)) {
-
-            String newName = args.getString(0);
-            bluetoothAdapter.setName(newName);
-            callbackContext.success();
-
-        } else if (action.equals(SET_DISCOVERABLE)) {
-
-            int discoverableDuration = args.getInt(0);
-            Intent discoverIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-            discoverIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, discoverableDuration);
-            cordova.getActivity().startActivity(discoverIntent);
 
         } else {
             validAction = false;
@@ -292,7 +231,6 @@ public class BluetoothSerial extends CordovaPlugin {
         if (device != null) {
             connectCallback = callbackContext;
             bluetoothSerialService.connect(device, secure);
-            buffer.setLength(0);
 
             PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
             result.setKeepCallback(true);
@@ -310,14 +248,6 @@ public class BluetoothSerial extends CordovaPlugin {
 
          public void handleMessage(Message msg) {
              switch (msg.what) {
-                 case MESSAGE_READ:
-                    buffer.append((String)msg.obj);
-
-                    if (dataAvailableCallback != null) {
-                        sendDataToSubscriber();
-                    }
-
-                    break;
                  case MESSAGE_READ_RAW:
                     if (rawDataAvailableCallback != null) {
                         byte[] bytes = (byte[]) msg.obj;
@@ -334,9 +264,6 @@ public class BluetoothSerial extends CordovaPlugin {
                             break;
                         case BluetoothSerialService.STATE_CONNECTING:
                             Log.i(TAG, "BluetoothSerialService.STATE_CONNECTING");
-                            break;
-                        case BluetoothSerialService.STATE_LISTEN:
-                            Log.i(TAG, "BluetoothSerialService.STATE_LISTEN");
                             break;
                         case BluetoothSerialService.STATE_NONE:
                             Log.i(TAG, "BluetoothSerialService.STATE_NONE");
@@ -377,38 +304,6 @@ public class BluetoothSerial extends CordovaPlugin {
             result.setKeepCallback(true);
             rawDataAvailableCallback.sendPluginResult(result);
         }
-    }
-
-    private void sendDataToSubscriber() {
-        String data = readUntil(delimiter);
-        if (data != null && data.length() > 0) {
-            PluginResult result = new PluginResult(PluginResult.Status.OK, data);
-            result.setKeepCallback(true);
-            dataAvailableCallback.sendPluginResult(result);
-
-            sendDataToSubscriber();
-        }
-    }
-
-    private int available() {
-        return buffer.length();
-    }
-
-    private String read() {
-        int length = buffer.length();
-        String data = buffer.substring(0, length);
-        buffer.delete(0, length);
-        return data;
-    }
-
-    private String readUntil(String c) {
-        String data = "";
-        int index = buffer.indexOf(c, 0);
-        if (index > -1) {
-            data = buffer.substring(0, index + c.length());
-            buffer.delete(0, index + c.length());
-        }
-        return data;
     }
 
     @Override
