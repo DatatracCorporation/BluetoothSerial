@@ -6,8 +6,7 @@
   "cordova": {
     "id": "cordova-plugin-bluetooth-serial",
     "platforms": [
-      "android",
-      "wp8"
+      "android"
     ]
   },
   "repository": {

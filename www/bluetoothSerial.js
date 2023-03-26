@@ -73,13 +73,6 @@ module.exports = {
     subscribeRawData: function (success, failure) {
 
         successWrapper = function(data) {
-            // Windows Phone flattens an array of one into a number which
-            // breaks the API. Stuff it back into an ArrayBuffer.
-            if (typeof data === 'number') {
-                var a = new Uint8Array(1);
-                a[0] = data;
-                data = a.buffer;
-            }
             success(data);
         };
         cordova.exec(successWrapper, failure, "BluetoothSerial", "subscribeRaw", []);

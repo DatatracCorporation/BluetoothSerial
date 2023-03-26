@@ -3,6 +3,7 @@
 Document the removal of iOS support from unnumbered version in fork.
 Upgrade to Android 12 (API 31) permission model. BLUETOOTH_CONNECT only.
 Remove support for managing discovery.
+Remove support for WP8.
 
 = unnumbered =
 

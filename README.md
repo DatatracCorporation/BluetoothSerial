@@ -7,8 +7,8 @@ Arduino.
 It can be used to communicate with Bluetooth barcode scanners in SPP
 mode.
 
-Android and Windows Phone use Classic Bluetooth.  iOS support has been
-disabled at this point.
+Android uses Classic Bluetooth.  iOS support has been disabled at this
+point.
 
 Under Android 12 (API 31), Android support targets the lowest permission
 profiles, so only the BLUETOOTH_CONNECT permission is used, meaning that
@@ -17,7 +17,6 @@ this plugin no longer manages discoverability.
 ## Supported Platforms
 
 * Android
-* Windows Phone 8
 * Browser (Testing only. See [comments](https://github.com/don/BluetoothSerial/blob/master/src/browser/bluetoothSerial.js).)
 
 [Supporting other Bluetooth Low Energy hardware](#supporting-other-ble-hardware)
@@ -77,10 +76,6 @@ Function `connect` connects to a Bluetooth device.  The callback is long running
 #### Android
 For Android, `connect` takes a MAC address of the remote device.
 
-#### Windows Phone
-For Windows Phone, `connect` takes a MAC address of the remote device. The MAC address can optionally surrounded with parenthesis. e.g. `(AA:BB:CC:DD:EE:FF)`
-
-
 ### Parameters
 
 - __macAddress_or_uuid__: Identifier of the remote device.
@@ -99,9 +94,6 @@ Function `connectInsecure` works like [connect](#connect), but creates an insecu
 
 #### Android
 For Android, `connectInsecure` takes a macAddress of the remote device.
-
-#### Windows Phone
-`connectInsecure` is **not supported** on Windows Phone.
 
 ### Parameters
 
@@ -351,24 +343,6 @@ Example list passed to success callback.  See [BluetoothDevice](http://developer
         "name": "RN42"
     }]
 
-#### Windows Phone
-
-Function `list` lists the paired Bluetooth devices.  The success callback is called with a list of objects.
-
-Example list passed to success callback for Windows Phone.
-
-    [{
-        "id": "(10:BF:48:CB:00:00)",
-        "name": "Nexus 7"
-    }, {
-        "id": "(00:06:66:4D:00:00)",
-        "name": "RN42"
-    }]
-
-### Note
-
-`id` is the generic name for `uuid` or [mac]`address` so that code can be platform independent.
-
 ### Parameters
 
 - __success__: Success callback function that is invoked with a list of bonded devices.
@@ -490,7 +464,7 @@ Function `enable` prompts the user to enable Bluetooth.
 
 #### Android
 
-`enable` is only supported on Android and does not work on Windows Phone.
+`enable` is only supported on Android.
 
 If `enable` is called when Bluetooth is already enabled, the user will not prompted and the success callback will be invoked.
 
@@ -519,9 +493,6 @@ Sets the human readable device name that is broadcasted to other devices.
 #### Android
 For Android, `setName` takes a String for the new name.
 
-#### Windows Phone
-Not currently implemented.
-
 ### Parameters
 
 - __newName__: Desired name of device.
@@ -538,9 +509,6 @@ Makes the device discoverable by other devices.
 
 #### Android
 For Android, `setDiscoverable` takes an int for the number of seconds device should be discoverable. A time of 0 will make it permanently discoverable.
-
-#### Windows Phone
-Not currently implemented.
 
 ### Parameters
 
