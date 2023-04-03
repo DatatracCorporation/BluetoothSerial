@@ -6,9 +6,7 @@ import java.io.OutputStream;
 import java.util.UUID;
 import java.util.Arrays;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.os.Bundle;
 import android.os.Handler;
@@ -34,7 +32,6 @@ public class BluetoothSerialService {
     private static final UUID UUID_SPP = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
     // Member fields
-    private final BluetoothAdapter mAdapter;
     private final Handler mHandler;
     private ConnectThread mConnectThread;
     private ConnectedThread mConnectedThread;
@@ -50,7 +47,6 @@ public class BluetoothSerialService {
      * @param handler  A Handler to send messages back to the UI Activity
      */
     public BluetoothSerialService(Handler handler) {
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
         mState = STATE_NONE;
         mHandler = handler;
     }
@@ -98,9 +94,8 @@ public class BluetoothSerialService {
     /**
      * Start the ConnectedThread to begin managing a Bluetooth connection
      * @param socket  The BluetoothSocket on which the connection was made
-     * @param device  The BluetoothDevice that has been connected
      */
-    public synchronized void connected(BluetoothSocket socket, BluetoothDevice device, final String socketType) {
+    public synchronized void connected(BluetoothSocket socket, final String socketType) {
         if (D) Log.d(TAG, "connected, Socket Type:" + socketType);
 
         // Cancel the thread that completed the connection
@@ -185,7 +180,7 @@ public class BluetoothSerialService {
     private class ConnectThread extends Thread {
         private /*final*/ BluetoothSocket mmSocket;
         private final BluetoothDevice mmDevice;
-        private String mSocketType;
+        private final String mSocketType;
 
         public ConnectThread(BluetoothDevice device, boolean secure) {
             mmDevice = device;
@@ -222,19 +217,30 @@ public class BluetoothSerialService {
                 // See https://github.com/don/BluetoothSerial/issues/89
                 try {
                     Log.i(TAG,"Trying fallback...");
-                    mmSocket = (BluetoothSocket) mmDevice.getClass().getMethod("createRfcommSocket", new Class[] {int.class}).invoke(mmDevice,1);
+                    mmSocket = (BluetoothSocket) mmDevice.getClass().getMethod("createRfcommSocket", int.class).invoke(mmDevice,1);
+                    if (mmSocket == null) {
+                        Log.e(TAG, "Unable to find createRfcommSocket");
+                        connectionFailed();
+                        return;
+                    }
                     mmSocket.connect();
                     Log.i(TAG,"Connected");
                 } catch (Exception e2) {
-                    Log.e(TAG, "Couldn't establish a Bluetooth connection.");
+                    Log.e(TAG, "Couldn't establish a Bluetooth connection.", e2);
                     try {
-                        mmSocket.close();
-                    } catch (IOException e3) {
+                        if (mmSocket != null) {
+                            mmSocket.close();
+                        }
+                    } catch (Exception e3) {
                         Log.e(TAG, "unable to close() " + mSocketType + " socket during connection failure", e3);
                     }
                     connectionFailed();
                     return;
                 }
+            } catch (Exception e) {
+                Log.e(TAG, "Unable to connected to bluetooth", e);
+                connectionFailed();
+                return;
             }
 
             // Reset the ConnectThread because we're done
@@ -243,7 +249,7 @@ public class BluetoothSerialService {
             }
 
             // Start the connected thread
-            connected(mmSocket, mmDevice, mSocketType);
+            connected(mmSocket, mSocketType);
         }
 
         public void cancel() {
