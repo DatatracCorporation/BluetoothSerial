@@ -1,3 +1,8 @@
+= 0.5.3 =
+
+Continue using deprecated permission check callback since the new one
+is not actually called.
+
 = 0.5.2 =
 
 Catch exceptions to prevent app crashes.

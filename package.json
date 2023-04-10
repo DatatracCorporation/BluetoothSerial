@@ -1,6 +1,6 @@
 {
   "name": "cordova-plugin-bluetooth-serial",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Bluetooth Serial Communication Plugin",
   "main": "./www/bluetoothSerial.js",
   "cordova": {

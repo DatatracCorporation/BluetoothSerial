@@ -9,6 +9,7 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.provider.Settings;
 import android.util.Log;
@@ -241,7 +242,7 @@ public class BluetoothSerial extends CordovaPlugin {
     // The Handler that gets information back from the BluetoothSerialService
     // Original code used handler for the because it was talking to the UI.
     // Consider replacing with normal callbacks
-    private final Handler mHandler = new Handler() {
+    private final Handler mHandler = new Handler(Looper.myLooper()) {
 
          public void handleMessage(Message msg) {
              switch (msg.what) {
@@ -303,8 +304,11 @@ public class BluetoothSerial extends CordovaPlugin {
         }
     }
 
+    // NOTE: This is listed as deprecated, but the new version (plural on
+    //       Permissions does not seem to get called...
+    //       https://github.com/apache/cordova-android/issues/1388
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+    public void onRequestPermissionResult(int requestCode, String[] permissions,
                                           int[] grantResults) throws JSONException {
 
         for(int result:grantResults) {
